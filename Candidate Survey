@@ -1,0 +1,104 @@
+import streamlit as st
+
+# Title of the app
+st.title("Stem Cell Viability Testing Candidate Survey")
+
+# Introduction text
+st.write("""
+Please fill out the following information to determine if you might be a candidate for stem cell viability testing.
+""")
+
+# 1. "Do you menstruate?" question
+menstruate = st.radio("Do you menstruate?", ["Yes", "No"])
+
+if menstruate == "No":
+    st.write("Unfortunately, you are not a candidate for this study as it requires menstruating participants.")
+else:
+    # 2. Age question
+    age = st.number_input("Age", min_value=0, max_value=120, value=30)
+
+    # 3. Cycle-related questions
+    cycle_length = st.selectbox(
+        "Cycle Length",
+        options=["Less than 27 days", "28-31 days", "31-35 days", "35+ days"]
+    )
+
+    cycle_regularity = st.selectbox(
+        "Cycle Regularity",
+        options=["Regular (cycle length varying 1-3 days)", 
+                 "Somewhat regular (cycle length varying 3-5 days)", 
+                 "Irregular (cycle length varying 5+ days)"]
+    )
+
+    contraception_use = st.selectbox(
+        "Contraception Use*",
+        options=["Hormonal", "Non-hormonal", "None"]
+    )
+
+    # Additional dropdown if hormonal contraception is selected
+    if contraception_use == "Hormonal":
+        hormonal_type = st.selectbox(
+            "If Hormonal, please specify:",
+            options=["Pill", "Patch", "IUD", "Other (write in)"]
+        )
+        
+        if hormonal_type == "Other (write in)":
+            other_hormonal_type = st.text_input("Please specify your method:")
+
+    period_length = st.slider("Period Length (in days)", min_value=1, max_value=10, value=5)
+
+    # 4. Geographical questions (now asked last)
+    us_resident = st.radio("Do you live in the United States?", ["Yes", "No"])
+    
+    if us_resident == "No":
+        st.write("Unfortunately, only residents of the United States are eligible for this study.")
+    else:
+        # US state dropdown
+        states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 
+                  'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 
+                  'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 
+                  'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 
+                  'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 
+                  'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 
+                  'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming']
+        
+        state = st.selectbox("Select your state", options=states)
+        
+        if state == "California":
+            # California counties dropdown
+            ca_counties = ['Alameda', 'Alpine', 'Amador', 'Butte', 'Calaveras', 'Colusa', 'Contra Costa', 
+                           'Del Norte', 'El Dorado', 'Fresno', 'Glenn', 'Humboldt', 'Imperial', 'Inyo', 'Kern', 
+                           'Kings', 'Lake', 'Lassen', 'Los Angeles', 'Madera', 'Marin', 'Mariposa', 'Mendocino', 
+                           'Merced', 'Modoc', 'Mono', 'Monterey', 'Napa', 'Nevada', 'Orange', 'Placer', 'Plumas', 
+                           'Riverside', 'Sacramento', 'San Benito', 'San Bernardino', 'San Diego', 'San Francisco', 
+                           'San Joaquin', 'San Luis Obispo', 'San Mateo', 'Santa Barbara', 'Santa Clara', 'Santa Cruz', 
+                           'Shasta', 'Sierra', 'Siskiyou', 'Solano', 'Sonoma', 'Stanislaus', 'Sutter', 'Tehama', 
+                           'Trinity', 'Tulare', 'Tuolumne', 'Ventura', 'Yolo', 'Yuba']
+            
+            county = st.selectbox("Select your county in California", options=ca_counties)
+
+        # Determine eligibility based on user inputs
+        def assess_candidate(menstruate, us_resident, state, cycle_length, cycle_regularity, contraception_use, period_length):
+            if menstruate == "No":
+                return "You must menstruate to be a candidate."
+
+            if us_resident == "No":
+                return "You must live in the United States to participate."
+
+            if state == "California" and county not in ca_counties:
+                return "Only participants from valid counties in California are eligible."
+
+            if cycle_regularity == "Irregular (cycle length varying 5+ days)" or cycle_length == "35+ days":
+                return "Irregular or long cycles may affect stem cell viability."
+
+            if contraception_use == "Hormonal" and hormonal_type in ["Pill", "Patch", "IUD"]:
+                return f"Since you are using {hormonal_type}, it may affect your eligibility for stem cell testing."
+
+            if period_length > 8:
+                return "Periods longer than 8 days may indicate a need for further medical evaluation before stem cell testing."
+
+            return "Based on your information, you could be a candidate for stem cell viability testing."
+
+        # Display results based on the assessment
+        result = assess_candidate(menstruate, us_resident, state, cycle_length, cycle_regularity, contraception_use, period_length)
+        st.write(f"### Assessment Result: {result}")
