@@ -39,7 +39,6 @@ def logicle_transform(data):
     transformed[data < 0] = linear_part
     return transformed
 
-# Function to export to PDF
 def export_to_pdf(mse, r2, average_viability, fig, fig_scatter):
     pdf = FPDF()
     pdf.add_page()
@@ -53,15 +52,13 @@ def export_to_pdf(mse, r2, average_viability, fig, fig_scatter):
     pdf.cell(200, 10, txt=f"Average Predicted Viability Confidence Level: {average_viability:.2f}%", ln=True)
 
     # Save plots to PDF
-    img_buffer = io.BytesIO()
-    fig.savefig(img_buffer, format='png', bbox_inches='tight')
-    img_buffer.seek(0)
-    pdf.image(img_buffer, x=10, y=None, w=180)
-    
-    pdf.add_page()
-    fig_scatter.savefig(img_buffer, format='png', bbox_inches='tight')
-    img_buffer.seek(0)
-    pdf.image(img_buffer, x=10, y=None, w=180)
+    for plot in [fig, fig_scatter]:
+        img_buffer = io.BytesIO()
+        plot.savefig(img_buffer, format='png', bbox_inches='tight')
+        img_buffer.seek(0)
+        img_str = img_buffer.getvalue()
+        pdf.image(io.BytesIO(img_str), x=10, y=None, w=180)
+        pdf.add_page()
 
     # Save PDF to buffer
     pdf_output = io.BytesIO()
