@@ -172,21 +172,25 @@ if model_run:
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", size=12)
-
+    
         # Add title
         pdf.cell(200, 10, txt="Stem Cell Viability Prediction Report", ln=True, align='C')
-
+    
         # Add results
         pdf.ln(10)
         pdf.cell(200, 10, txt=f"Mean Squared Error (MSE): {mse:.2f}", ln=True)
         pdf.cell(200, 10, txt=f"R-squared (R² Score): {r2:.2f}", ln=True)
         pdf.cell(200, 10, txt=f"Average Predicted Viability Confidence Level: {average_viability:.2f}%", ln=True)
-
+        
+        # Add space for visualizations section
+        pdf.ln(10)
+        pdf.cell(200, 10, txt="Visualizations are available in the Streamlit App.", ln=True)
+    
         # Save the PDF to a buffer
         pdf_output = io.BytesIO()
         pdf.output(pdf_output)
         pdf_output.seek(0)
-
+    
         # Download button for the PDF
         st.download_button(
             label="Download PDF Report",
@@ -194,3 +198,4 @@ if model_run:
             file_name="viability_report.pdf",
             mime="application/pdf"
         )
+
