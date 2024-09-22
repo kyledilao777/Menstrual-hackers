@@ -180,7 +180,7 @@ if model_run:
         )
 
 
-    # Function to save plots as images and export them to PDF
+# Function to save plots as images and export them to PDF
 def export_to_pdf(mse, r2, average_viability):
     pdf = FPDF()
     pdf.add_page()
@@ -259,5 +259,3 @@ def export_to_pdf(mse, r2, average_viability):
 
     # Return the PDF for download
     return pdf_output
-
-  
