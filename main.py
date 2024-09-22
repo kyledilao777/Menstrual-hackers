@@ -167,30 +167,90 @@ if model_run:
     plt.grid(True)
     st.pyplot(plt)
 
+    # Function to save plots as images and export them to PDF
+def export_to_pdf(mse, r2, average_viability):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    # Add title
+    pdf.cell(200, 10, txt="Stem Cell Viability Prediction Report", ln=True, align='C')
+    
+    # Add evaluation metrics
+    pdf.ln(10)
+    pdf.cell(200, 10, txt=f"Mean Squared Error (MSE): {mse:.2f}", ln=True)
+    pdf.cell(200, 10, txt=f"R-squared (R² Score): {r2:.2f}", ln=True)
+    pdf.cell(200, 10, txt=f"Average Predicted Viability Confidence Level: {average_viability:.2f}%", ln=True)
+
+    # Save each plot as an image in memory
+    img_buffer = io.BytesIO()
+
+    # Plot 1: Distribution of CD10 Expression
+    plt.figure(figsize=(6, 4))
+    sns.histplot(data['CD10'], kde=True, color='blue')
+    plt.title('Distribution of CD10 Expression')
+    plt.xlabel('CD10 Expression Level')
+    plt.ylabel('Frequency')
+    plt.tight_layout()
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)  # Rewind buffer to beginning
+    pdf.image(img_buffer, x=10, y=None, w=100)  # Adjust the x, y, and width as needed
+    img_buffer.truncate(0)
+    img_buffer.seek(0)  # Clear buffer
+
+    # Plot 2: Density Plot of CD44 vs. CD73
+    plt.figure(figsize=(6, 4))
+    sns.kdeplot(x=data['CD44'], y=data['CD73'], cmap='Blues', shade=True)
+    plt.title('Density Plot of CD44 vs. CD73')
+    plt.xlabel('CD44 Expression Level')
+    plt.ylabel('CD73 Expression Level')
+    plt.tight_layout()
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    pdf.image(img_buffer, x=10, y=None, w=100)
+    img_buffer.truncate(0)
+    img_buffer.seek(0)
+
+    # Plot 3: Residuals Distribution
+    residuals = y_test - y_pred
+    plt.figure(figsize=(6, 4))
+    sns.histplot(residuals, kde=True, color='blue')
+    plt.title('Residuals Distribution (Actual - Predicted)')
+    plt.xlabel('Residuals')
+    plt.ylabel('Frequency')
+    plt.tight_layout()
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    pdf.image(img_buffer, x=10, y=None, w=100)
+    img_buffer.truncate(0)
+    img_buffer.seek(0)
+
+    # Plot 4: Feature Importance Plot
+    feature_importances = pd.Series(rf_model.feature_importances_, index=X_test.columns)
+    plt.figure(figsize=(6, 4))
+    feature_importances.nlargest(10).plot(kind='barh', color='skyblue')
+    plt.title('Top 10 Important Biomarkers')
+    plt.xlabel('Importance Score')
+    plt.ylabel('Biomarker')
+    plt.tight_layout()
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    pdf.image(img_buffer, x=10, y=None, w=100)
+    img_buffer.truncate(0)
+    img_buffer.seek(0)
+
+    # Save the PDF to a buffer
+    pdf_output = io.BytesIO()
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
+
+    # Return the PDF for download
+    return pdf_output
+
     # Button to generate PDF report
     if st.button("Export Report as PDF"):
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
-    
-        # Add title
-        pdf.cell(200, 10, txt="Stem Cell Viability Prediction Report", ln=True, align='C')
-    
-        # Add results
-        pdf.ln(10)
-        pdf.cell(200, 10, txt=f"Mean Squared Error (MSE): {mse:.2f}", ln=True)
-        pdf.cell(200, 10, txt=f"R-squared (R² Score): {r2:.2f}", ln=True)
-        pdf.cell(200, 10, txt=f"Average Predicted Viability Confidence Level: {average_viability:.2f}%", ln=True)
+        pdf_output = export_to_pdf(mse, r2, average_viability)
         
-        # Add space for visualizations section
-        pdf.ln(10)
-        pdf.cell(200, 10, txt="Visualizations are available in the Streamlit App.", ln=True)
-    
-        # Save the PDF to a buffer
-        pdf_output = io.BytesIO()
-        pdf.output(pdf_output)
-        pdf_output.seek(0)
-    
         # Download button for the PDF
         st.download_button(
             label="Download PDF Report",
