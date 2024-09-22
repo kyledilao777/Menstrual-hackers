@@ -248,14 +248,14 @@ def export_to_pdf(mse, r2, average_viability):
     return pdf_output
 
     # Button to generate PDF report
-    if st.button("Export Report as PDF"):
-        pdf_output = export_to_pdf(mse, r2, average_viability)
+if st.button("Export Report as PDF"):
+    pdf_output = export_to_pdf(mse, r2, average_viability)
         
-        # Download button for the PDF
-        st.download_button(
-            label="Download PDF Report",
-            data=pdf_output,
-            file_name="viability_report.pdf",
-            mime="application/pdf"
-        )
+    # Download button for the PDF
+    st.download_button(
+        label="Download PDF Report",
+        data=pdf_output,
+        file_name="viability_report.pdf",
+        mime="application/pdf"
+    )
 
