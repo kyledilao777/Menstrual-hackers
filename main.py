@@ -88,14 +88,19 @@ if st.button("Run Model"):
     st.subheader("Export Results")
     # Create a button to download the results as an Excel file
     output = io.BytesIO()
-    excel_writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    results_df.to_excel(excel_writer, index=False, sheet_name='Sheet1')
-    excel_writer.save()
-    excel_data = output.getvalue()
-
+    
+    # Use pandas to write to an Excel file with xlsxwriter as the engine
+    with pd.ExcelWriter(output, engine='xlsxwriter') as excel_writer:
+        results_df.to_excel(excel_writer, index=False, sheet_name='Sheet1')
+        excel_writer.save()  # This is deprecated, use 'close()' instead
+    
+    # Ensure the data is available in the buffer
+    output.seek(0)
+    
+    # Streamlit download button for exporting the data
     st.download_button(
         label="Download Results as Excel",
-        data=excel_data,
+        data=output,
         file_name='stem_cell_predictions.xlsx',
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
