@@ -69,6 +69,10 @@ def export_to_pdf(mse, r2, average_viability, fig, fig_scatter):
     pdf_output.seek(0)
     return pdf_output
 
+# Initialize session state
+if 'model_run' not in st.session_state:
+    st.session_state.model_run = False
+
 # Load the synthetic stem cell dataset
 data = pd.read_csv('./Stem_Cell_Synthetic_Dataset.csv')
 
@@ -82,9 +86,9 @@ for column in data.columns[1:-1]:  # Skip 'Sample ID' and 'Confidence Level'
     biomarker_values[column] = st.number_input(f"{column} Value", min_value=0.0, step=0.1)
 
 # Run the model when the button is clicked
-model_run = st.button("Run Model")
-
-if model_run:
+if st.button("Run Model") or st.session_state.model_run:
+    st.session_state.model_run = True
+    
     # Display input values as a DataFrame
     user_input = pd.DataFrame([biomarker_values])
     st.write("### Biomarker Input")
@@ -93,8 +97,17 @@ if model_run:
     # Train the model and get results
     rf_model, X_test, y_test, y_pred, mse, r2 = train_model(data)
 
+    # Store results in session state
+    st.session_state.rf_model = rf_model
+    st.session_state.X_test = X_test
+    st.session_state.y_test = y_test
+    st.session_state.y_pred = y_pred
+    st.session_state.mse = mse
+    st.session_state.r2 = r2
+
     # Predict the viability confidence for the user input
     user_prediction = rf_model.predict(user_input)[0]
+    st.session_state.user_prediction = user_prediction
 
     # Display the predicted viability confidence
     st.subheader("Predicted Viability Confidence Level")
@@ -196,9 +209,20 @@ if model_run:
     ax_scatter.grid(True)
     st.pyplot(fig_scatter)
 
-    # Button to generate PDF report
+    # Store figures in session state
+    st.session_state.fig = fig
+    st.session_state.fig_scatter = fig_scatter
+
+# PDF export button (only show if model has been run)
+if st.session_state.model_run:
     if st.button("Export Report as PDF"):
-        pdf_output = export_to_pdf(mse, r2, average_viability, fig, fig_scatter)
+        pdf_output = export_to_pdf(
+            st.session_state.mse, 
+            st.session_state.r2, 
+            st.session_state.y_pred.mean(), 
+            st.session_state.fig, 
+            st.session_state.fig_scatter
+        )
         
         # Download button for the PDF
         st.download_button(
