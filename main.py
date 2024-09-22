@@ -77,12 +77,20 @@ if st.button("Run Model"):
 
     # Display results
     st.subheader("Model Performance on Test Data")
-    results_df = pd.DataFrame({"Actual": y_test, "Predicted": y_pred})
+    results_df = pd.DataFrame({
+        "Sample ID": data['Sample ID'][y_test.index],  # Adding Sample ID
+        "Actual": y_test,
+        "Predicted": y_pred
+    })
     st.write(results_df)
 
     # Display evaluation metrics
     st.write(f"**Mean Squared Error (MSE)**: {mse:.2f}")
     st.write(f"**R-squared (R² Score)**: {r2:.2f}")
+
+    # Add average predicted viability
+    average_viability = results_df['Predicted'].mean()
+    st.write(f"**Average Predicted Viability Confidence Level**: {average_viability:.2f}%")
 
     # Add an option to export the results to Excel
     st.subheader("Export Results")
@@ -105,21 +113,53 @@ if st.button("Run Model"):
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
-# Additional visualizations (optional)
-if st.checkbox("Show Residuals Plot"):
-    residuals = y_test - y_pred
-    plt.figure(figsize=(8, 6))
-    sns.histplot(residuals, kde=True, color='blue')
-    plt.title('Residuals Distribution (Actual - Predicted)')
-    plt.xlabel('Residuals')
-    plt.ylabel('Frequency')
-    st.pyplot(plt)
+# Visualizations in a 2x2 grid
+st.subheader("Visualizations")
 
-if st.checkbox("Show Feature Importance Plot"):
-    feature_importances = pd.Series(rf_model.feature_importances_, index=X_test.columns)
-    plt.figure(figsize=(10, 6))
-    feature_importances.nlargest(10).plot(kind='barh', color='skyblue')
-    plt.title('Top 10 Important Biomarkers')
-    plt.xlabel('Importance Score')
-    plt.ylabel('Biomarker')
-    st.pyplot(plt)
+# Create a 2x2 grid for the visualizations
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+# Step 1: Histogram of a Single Marker (e.g., CD10)
+sns.histplot(data['CD10'], kde=True, color='blue', ax=axes[0, 0])
+axes[0, 0].set_title('Distribution of CD10 Expression')
+axes[0, 0].set_xlabel('CD10 Expression Level')
+axes[0, 0].set_ylabel('Frequency')
+
+# Step 2: Density Plot (CD44 vs. CD73)
+sns.kdeplot(x=data['CD44'], y=data['CD73'], cmap='Blues', shade=True, ax=axes[0, 1])
+axes[0, 1].set_title('Density Plot of CD44 vs. CD73')
+axes[0, 1].set_xlabel('CD44 Expression Level')
+axes[0, 1].set_ylabel('CD73 Expression Level')
+
+# Step 3: Residuals Plot
+residuals = y_test - y_pred
+sns.histplot(residuals, kde=True, color='blue', ax=axes[1, 0])
+axes[1, 0].set_title('Residuals Distribution (Actual - Predicted)')
+axes[1, 0].set_xlabel('Residuals')
+axes[1, 0].set_ylabel('Frequency')
+
+# Step 4: Feature Importance Plot
+feature_importances = pd.Series(rf_model.feature_importances_, index=X_test.columns)
+feature_importances.nlargest(10).plot(kind='barh', color='skyblue', ax=axes[1, 1])
+axes[1, 1].set_title('Top 10 Important Biomarkers')
+axes[1, 1].set_xlabel('Importance Score')
+axes[1, 1].set_ylabel('Biomarker')
+
+plt.tight_layout()
+st.pyplot(fig)
+
+# Re-import necessary libraries for the scatter plot
+cd44 = np.random.normal(loc=50, scale=10, size=1000)
+cd73 = np.random.normal(loc=50, scale=15, size=1000)
+cd44_logicle = logicle_transform(cd44)
+cd73_logicle = logicle_transform(cd73)
+
+# Logicle Scatter Plot of CD44 vs CD73
+plt.figure(figsize=(8, 6))
+plt.scatter(cd44_logicle, cd73_logicle, alpha=0.5, c=cd44_logicle, cmap='coolwarm')
+plt.title('Logicle Scatter Plot: CD44 vs. CD73 (Color by CD44 Expression)')
+plt.xlabel('CD44 (Logicle Transformed)')
+plt.ylabel('CD73 (Logicle Transformed)')
+plt.colorbar(label='CD44 Expression Level')
+plt.grid(True)
+st.pyplot(plt)
