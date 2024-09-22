@@ -6,6 +6,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import io  # For in-memory file operations
 
 # Function to preprocess data and train the model
 def train_model(data):
@@ -53,32 +54,58 @@ for column in data.columns[2:-1]:  # Skip 'Sample ID' and 'Confidence Level'
 if st.button("Run Model"):
     # Display input values as a DataFrame
     user_input = pd.DataFrame([biomarker_values])
-    st.write("Biomarker Input:", user_input)
+    st.write("### Biomarker Input")
+    st.write(user_input)
 
     # Train the model and get results
     rf_model, X_test, y_test, y_pred, mse, r2 = train_model(data)
 
+    # Predict the viability confidence for the user input
+    user_prediction = rf_model.predict(user_input)[0]
+
+    # Display the predicted viability confidence
+    st.subheader("Predicted Viability Confidence Level")
+    st.write(f"Based on the input biomarkers, the predicted viability confidence level is **{user_prediction:.2f}%**.")
+
+    # Provide a description of the results
+    st.write("""
+    ### Model Results Explanation
+    - **Actual**: The true confidence levels from the test dataset.
+    - **Predicted**: The confidence levels predicted by the model.
+    - The model uses the input biomarkers to predict the viability confidence level of stem cells.
+    """)
+
     # Display results
-    st.subheader("Model Results")
+    st.subheader("Model Performance on Test Data")
     results_df = pd.DataFrame({"Actual": y_test, "Predicted": y_pred})
     st.write(results_df)
 
     # Display evaluation metrics
-    st.write(f"Mean Squared Error (MSE): {mse}")
-    st.write(f"R-squared (R2): {r2}")
+    st.write(f"**Mean Squared Error (MSE)**: {mse:.2f}")
+    st.write(f"**R-squared (R² Score)**: {r2:.2f}")
 
     # Add an option to export the results to Excel
     st.subheader("Export Results")
-    if st.button("Export to Excel"):
-        results_df.to_excel("stem_cell_predictions.xlsx", index=False)
-        st.write("Results exported to 'stem_cell_predictions.xlsx'.")
+    # Create a button to download the results as an Excel file
+    output = io.BytesIO()
+    excel_writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    results_df.to_excel(excel_writer, index=False, sheet_name='Sheet1')
+    excel_writer.save()
+    excel_data = output.getvalue()
+
+    st.download_button(
+        label="Download Results as Excel",
+        data=excel_data,
+        file_name='stem_cell_predictions.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 # Additional visualizations (optional)
 if st.checkbox("Show Residuals Plot"):
     residuals = y_test - y_pred
     plt.figure(figsize=(8, 6))
     sns.histplot(residuals, kde=True, color='blue')
-    plt.title('Residuals Distribution (Predicted - Actual)')
+    plt.title('Residuals Distribution (Actual - Predicted)')
     plt.xlabel('Residuals')
     plt.ylabel('Frequency')
     st.pyplot(plt)
