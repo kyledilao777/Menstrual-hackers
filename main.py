@@ -92,7 +92,7 @@ if st.button("Run Model"):
     # Use pandas to write to an Excel file with xlsxwriter as the engine
     with pd.ExcelWriter(output, engine='xlsxwriter') as excel_writer:
         results_df.to_excel(excel_writer, index=False, sheet_name='Sheet1')
-        excel_writer.save()  # This is deprecated, use 'close()' instead
+        excel_writer.close()  
     
     # Ensure the data is available in the buffer
     output.seek(0)
