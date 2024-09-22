@@ -47,7 +47,7 @@ st.title("Stem Cell Viability Prediction Portal")
 # Allow user input for biomarkers
 st.header("Input Biomarker Values")
 biomarker_values = {}
-for column in data.columns[2:-1]:  # Skip 'Sample ID' and 'Confidence Level'
+for column in data.columns[1:-1]:  # Skip 'Sample ID' and 'Confidence Level'
     biomarker_values[column] = st.number_input(f"{column} Value", min_value=0.0, step=0.1)
 
 # Run the model when the button is clicked
